@@ -94,4 +94,64 @@ const registerUser = asyncHandler(async (req,res) => {
     ))
 })
 
-export {registerUser};
+const loginUser = asyncHandler(async(req,res) => {
+    /*
+    -> take email and password from req.body or frontend
+    -> validate email and password
+    -> check if user exists with given email
+    -> compare password
+    -> generate accessToken and refreshToken
+    -> set cookies and return response
+    */
+    
+    const {email,password} = req.body
+
+    if(!email || email.trim() === ""){
+        throw new ApiError(400,"email is required")
+    }
+    if(!password){
+        throw new ApiError(400,"password is required")
+    }
+
+    const user = await User.findOne({email}).select("+password +refreshToken")
+
+    if(!user){
+        throw new ApiError(404,"User not found with given email")
+    }
+
+    if (!password) {
+            throw new ApiError(400, "Password is required");
+        }
+
+    const isPasswordMatched = await user.isPasswordCorrect(password)
+
+    if(!isPasswordMatched){
+        throw new ApiError(401,"Invalid password")
+    }
+
+    const createdUser = await User.findById(user._id).select(
+            "-password -refreshToken"
+        )
+
+    if(!createdUser){
+        throw new ApiError(500,"Something went wrong while logging in")
+    }
+
+    const options = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict"
+    };
+
+    const {accessToken,refreshToken} = await generateAccessAndRefreshTokens(createdUser._id)
+    return res.status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(new ApiResponse(
+        200,
+        {user: createdUser, accessToken},
+        "User logged in successfully"
+    ))
+})
+
+export {registerUser,loginUser};
