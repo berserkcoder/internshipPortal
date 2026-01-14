@@ -154,4 +154,76 @@ const loginUser = asyncHandler(async(req,res) => {
     ))
 })
 
-export {registerUser,loginUser};
+const logoutUser = asyncHandler(async(req,res) => {
+    /*
+    -> clear cookies
+    -> return response
+    */
+    await User.findByIdAndUpdate(
+    req.user._id,
+    {
+        $set: {
+            refreshToken: null
+        }
+    },
+    {
+        new: true
+    }
+   )
+
+    const options = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict"
+    };
+
+    return res
+    .status(200)
+    .clearCookie("accessToken",options)
+    .clearCookie("refreshToken",options)
+    .json(new ApiResponse(200,{},"User logged Out"))
+})
+
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+    const incomingRefreshToken =
+        req.cookies.refreshToken || req.body.refreshToken;
+
+    if (!incomingRefreshToken) {
+        throw new ApiError(401, "Unauthorized request");
+    }
+
+    const decodedToken = jwt.verify(
+        incomingRefreshToken,
+        process.env.REFRESH_TOKEN_SECRET
+    );
+
+    const user = await User.findById(decodedToken._id);
+
+    if (!user || user.refreshToken !== incomingRefreshToken) {
+        throw new ApiError(401, "Invalid or expired refresh token");
+    }
+
+    const { accessToken, refreshToken } =
+        await generateAccessAndRefreshTokens(user._id);
+
+    const options = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict"
+    };
+
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new ApiResponse(
+                200,
+                {},
+                "Access token refreshed successfully"
+            )
+        );
+});
+
+export {registerUser,loginUser,logoutUser,refreshAccessToken};
