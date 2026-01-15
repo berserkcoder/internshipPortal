@@ -6,9 +6,10 @@ import { requireRecruiter } from "../middlewares/requireRecruiter.middlewares.js
 import { requireCandidate } from "../middlewares/requireCandidate.middlewares.js";
 import { getRecruiterJobs, createJob, updateJob, deleteJob, getAllJobs, getJobById } from "../controllers/job.controllers.js";
 import { uploadResume } from "../controllers/resume.controllers.js";
+import { upload } from "../middlewares/multer.middlewares.js";
 
 const router = Router()
 
-router.route("/upload").post(verifyJWT,requireCandidate,uploadResume)
+router.route("/uploadResume").post(verifyJWT,requireCandidate,upload.single("resume"),uploadResume)
 
 export default router

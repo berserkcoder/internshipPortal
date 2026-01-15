@@ -28,7 +28,7 @@ const applyForJob = asyncHandler(async(req,res)=>{
    const job = await Job.findById(jobId)
    const recruiter = job.recruiter
    const resume = await Resume.findOne({
-           candidateId
+           candidate : candidateId
     })
     
     

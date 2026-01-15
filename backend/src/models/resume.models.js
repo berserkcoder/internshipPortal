@@ -6,6 +6,22 @@ const resumeSchema = new mongoose.Schema({
         ref : "User",
         required : true,
         unique : true
+    },
+    fileUrl : {
+        type : String,
+        required : true
+    },
+    fileName : {
+        type : String,
+        required : true
+    },
+    fileSize : {
+        type : Number,
+        required : true
+    },
+    mimeType : {
+        type : String,
+        required : true
     }
 },{timestamps:true})
 
