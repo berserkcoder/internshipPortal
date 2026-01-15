@@ -57,11 +57,15 @@ const jobSchema = new mongoose.Schema({
         type : Number,
         default : 0
     },
-    expiresAt : {
-        type : Date,
+    expiresAt: {
+        type: Date,
+        required: true,
         validate: {
             validator: function (value) {
-            return !value || value > new Date();
+            if (this.isNew) {
+                return value > new Date();
+            }
+            return true;
             },
             message: "Expiration date must be in the future"
         }

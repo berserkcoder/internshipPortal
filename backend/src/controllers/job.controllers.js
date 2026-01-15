@@ -4,6 +4,29 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 import {Job} from "../models/job.models.js";
 import mongoose from "mongoose";
 
+const getAllJobs = asyncHandler(async(req,res)=>{
+    const status = "open"
+    const jobs = await Job.find({status,expiresAt: { $gt: new Date() }}).sort({ createdAt: -1 });
+    return res.status(200).json(new ApiResponse(200,jobs,"All jobs fetched successfully"))
+})
+
+const getJobById = asyncHandler(async(req,res) => {
+    const _id = req.params.id
+    if (!mongoose.Types.ObjectId.isValid(_id)) {
+        throw new ApiError(400, "Invalid job ID");
+    }
+    const job = await Job.findOne({
+        _id,
+        status: "open",
+        expiresAt: { $gt: new Date() }
+    });
+    if (!job) {
+        throw new ApiError(404, "Job not found");
+    }
+
+    return res.status(200).json(new ApiResponse(200,job,"job fetched successfully"))
+})
+
 const getRecruiterJobs = asyncHandler(async(req,res)=> {
     /*
     -> fetch jobs from db
@@ -147,4 +170,4 @@ const deleteJob = asyncHandler(async(req,res) => {
     ))
 }) 
 
-export {getRecruiterJobs, createJob, updateJob, deleteJob};
+export {getRecruiterJobs, createJob, updateJob, deleteJob, getAllJobs, getJobById};
