@@ -134,4 +134,10 @@ const statusUpdate = asyncHandler(async(req,res)=>{
     return res.status(200).json(new ApiResponse(200,updatedApplication,"application status updated successfully"))
 })
 
-export {applyForJob,applicantsByJobId,statusUpdate}
+const applicationByCandidateId = asyncHandler(async(req,res)=>{
+    const candidate = req.user._id
+    const applications = await Application.find({candidate})
+    return res.status(200).json(new ApiResponse(200,applications,"All applications of this candidate fetched successfully"))
+})
+
+export {applyForJob,applicantsByJobId,statusUpdate,applicationByCandidateId}
