@@ -16,15 +16,19 @@ const applyForJob = asyncHandler(async(req,res)=>{
     -> handle duplicate apply error cleanly
     -> return response
     */
-   const candidate = req.user._id
+   const candidateId = req.user._id
    const jobId = req.params.id
    if (!mongoose.Types.ObjectId.isValid(jobId)) {
         throw new ApiError(400, "Invalid job ID");
     }
+   const candidate = await Application.findOne({candidate:candidateId,job:jobId})
+   if(candidate){
+    throw new ApiError(409,"you have already applied for this job")
+   }
    const job = await Job.findById(jobId)
    const recruiter = job.recruiter
    const resume = await Resume.findOne({
-           candidate
+           candidateId
     })
     
     
@@ -39,7 +43,7 @@ const applyForJob = asyncHandler(async(req,res)=>{
     }
 
     const applied = await Application.create({
-        candidate,
+        candidate : candidateId,
         recruiter,
         job : jobId,
         resume : resume._id
