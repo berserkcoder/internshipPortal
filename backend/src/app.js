@@ -1,4 +1,4 @@
-import express from "express";
+import express, { application } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
@@ -17,8 +17,12 @@ app.use(cookieParser())
 
 import userRouter from './routes/user.routes.js'
 import jobRouter from './routes/job.routes.js'
+import applicationRouter from './routes/application.routes.js'
+import resumeRouter from './routes/resume.routes.js'
 
 app.use("/api/v1/users",userRouter)
 app.use("/api/v1/jobs",jobRouter)
+app.use("/api/v1/applications",applicationRouter)
+app.use("/api/v1/resume",resumeRouter)
 
 export {app};
