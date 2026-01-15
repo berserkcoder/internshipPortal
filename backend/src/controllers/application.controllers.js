@@ -56,4 +56,82 @@ const applyForJob = asyncHandler(async(req,res)=>{
     return res.status(200).json(new ApiResponse(200,applied,"Applied for job successfully"))
 })
 
-export {applyForJob}
+const applicantsByJobId = asyncHandler(async (req, res) => {
+    const jobId = req.params.id
+    const recruiterId = req.user._id
+
+    // 1. Verify job ownership
+    const job = await Job.findOne({ _id: jobId, recruiter: recruiterId })
+    if (!job) {
+        throw new ApiError(
+            403,
+            "You are not authorized to view applications for this job"
+        )
+    }
+
+    // 2. Fetch applications with required references
+    const applications = await Application.find({ job: jobId })
+        .populate("candidate", "fullName email")
+        .populate("resume", "url")
+        .sort({ createdAt: -1 })
+
+    // 3. Shape clean recruiter-safe response
+    const formattedApplications = applications.map(app => ({
+        applicationId: app._id,
+        candidate: {
+            id: app.candidate._id,
+            name: app.candidate.fullName,
+            email: app.candidate.email
+        },
+        resume: {
+            id: app.resume._id,
+            url: app.resume.url
+        },
+        status: app.status,
+        appliedAt: app.createdAt
+    }))
+
+    // 4. Final response
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                jobId,
+                totalApplications: formattedApplications.length,
+                applications: formattedApplications
+            },
+            "Applications fetched successfully"
+        )
+    )
+})
+
+const statusUpdate = asyncHandler(async(req,res)=>{
+    const applicationId = req.params.id
+    const recruiterId = req.user._id
+    const {status} = req.body
+
+    // 1. Verify job ownership
+    const application = await Application.findOne({ _id: applicationId, recruiter: recruiterId })
+    if (!application) {
+        throw new ApiError(
+            403,
+            "You are not authorized to update this application"
+        )
+    }
+
+    if(!status){
+        throw new ApiError(400,"Status should be updated")
+    }
+
+    const updatedApplication = await Application.findByIdAndUpdate(
+        applicationId,
+        { status },
+        { new: true, runValidators: true }
+    )
+    if(!updatedApplication){
+        throw new ApiError(500,"Internal server error while updating application status")
+    }
+    return res.status(200).json(new ApiResponse(200,updatedApplication,"application status updated successfully"))
+})
+
+export {applyForJob,applicantsByJobId,statusUpdate}
