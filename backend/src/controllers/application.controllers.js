@@ -137,7 +137,28 @@ const statusUpdate = asyncHandler(async(req,res)=>{
 const applicationByCandidateId = asyncHandler(async(req,res)=>{
     const candidate = req.user._id
     const applications = await Application.find({candidate})
-    return res.status(200).json(new ApiResponse(200,applications,"All applications of this candidate fetched successfully"))
+                        .populate("job", "title companyName")
+                        .sort({createdAt : -1})
+
+    const formattedApplications = applications.map(app => ({
+        applicationId: app._id,
+        job : {
+            id : app.job._id,
+            title : app.job.title,
+            companyName : app.job.companyName
+        },
+        status: app.status,
+        appliedAt: app.createdAt
+    }))
+    return res.status(200)
+              .json(new ApiResponse(
+                200,
+                {
+                    totalApplications : formattedApplications.length,
+                    applications : formattedApplications
+                },
+                "All applications of this candidate fetched successfully"
+        ))
 })
 
 export {applyForJob,applicantsByJobId,statusUpdate,applicationByCandidateId}
