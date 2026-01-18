@@ -7,6 +7,10 @@ const resumeSchema = new mongoose.Schema({
         required : true,
         unique : true
     },
+    cloudinaryPublicId : {
+        type: String,
+        required: true
+    },
     fileUrl : {
         type : String,
         required : true

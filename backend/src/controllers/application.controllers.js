@@ -76,7 +76,7 @@ const applicantsByJobId = asyncHandler(async (req, res) => {
     // 2. Fetch applications with required references
     const applications = await Application.find({ job: jobId })
         .populate("candidate", "fullName email")
-        .populate("resume", "url")
+        .populate("resume", "fileUrl")
         .sort({ createdAt: -1 })
 
     // 3. Shape clean recruiter-safe response
@@ -89,7 +89,7 @@ const applicantsByJobId = asyncHandler(async (req, res) => {
         },
         resume: {
             id: app.resume._id,
-            url: app.resume.url
+            url: app.resume.fileUrl
         },
         status: app.status,
         appliedAt: app.createdAt
