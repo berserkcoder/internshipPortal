@@ -9,12 +9,18 @@ import { getRecruiterJobs, createJob, updateJob, deleteJob, getAllJobs, getJobBy
 
 const router = Router()
 
+// Public routes
+router.route("/").get(getAllJobs)
+
+// Specific routes before /:id
 router.route("/my").get(verifyJWT,requireRecruiter,getRecruiterJobs)
-router.route("/").post(verifyJWT,requireRecruiter,createJob)
+
+// Generic :id routes must come AFTER specific routes
+router.route("/:id").get(verifyJWT,getJobById)
 router.route("/:id").patch(verifyJWT,requireRecruiter,updateJob)
 router.route("/:id").delete(verifyJWT,requireRecruiter,deleteJob)
 
-router.route("/").get(getAllJobs)
-router.route("/:id").get(getJobById)
+// Create route
+router.route("/").post(verifyJWT,requireRecruiter,createJob)
 
 export default router

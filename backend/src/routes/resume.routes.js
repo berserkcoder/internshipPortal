@@ -11,8 +11,11 @@ import {requireResume} from "../middlewares/requireResume.middlewares.js"
 
 const router = Router()
 
+// Specific routes BEFORE generic :id routes
 router.route("/uploadResume").post(verifyJWT,requireCandidate,upload.single("resume"),uploadResume)
 router.route("/me").get(verifyJWT,requireCandidate,getResume)
+
+// Generic :id routes AFTER specific routes
 router.route("/:id").patch(verifyJWT,requireCandidate,requireResume,upload.single("updatedResume"),updateResume)
 router.route("/:id").delete(verifyJWT,requireCandidate,requireResume,deleteResume)
 

@@ -101,12 +101,22 @@ const updateResume = asyncHandler(async(req,res)=>{
 const deleteResume = asyncHandler(async(req,res)=>{
     const resumeId = req.params.id
     const candidate = req.user._id
+    console.log('Delete resume called with resumeId:', resumeId, 'candidate:', candidate);
+    
     const resume = await Resume.findOne({_id : resumeId,candidate})
+    console.log('Found resume:', resume);
+    
     if(!resume){
+        console.log('Resume not found');
         throw new ApiError(404,"Resume not found")
     }
+    
+    console.log('Deleting from cloudinary:', resume.cloudinaryPublicId);
     await deleteFromCloudinary(resume.cloudinaryPublicId)
+    
     const deletedResume = await Resume.findOneAndDelete({_id : resumeId,candidate})
+    console.log('Deleted resume:', deletedResume);
+    
     return res.status(200).json(new ApiResponse(200,deletedResume,"resume deleted successfully"))
 })
 

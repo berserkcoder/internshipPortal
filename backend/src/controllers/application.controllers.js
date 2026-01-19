@@ -77,28 +77,34 @@ const applicantsByJobId = asyncHandler(async (req, res) => {
         .populate("resume", "fileUrl")
         .sort({ createdAt: -1 })
 
+    console.log('Total applications found:', applications.length);
+    applications.forEach(app => {
+        console.log('App ID:', app._id, 'Has candidate:', !!app.candidate, 'Has resume:', !!app.resume);
+    });
+
     // 3. Shape clean recruiter-safe response
-    const formattedApplications = applications.map(app => ({
-        applicationId: app._id,
-        candidate: {
-            id: app.candidate._id,
-            name: app.candidate.fullName,
-            email: app.candidate.email
-        },
-        resume: {
-            id: app.resume._id,
-            url: app.resume.fileUrl
-        },
-        status: app.status,
-        appliedAt: app.createdAt
-    }))
+    const formattedApplications = applications
+        .filter(app => app.candidate) // Filter out applications with deleted candidate/resume
+        .map(app => ({
+            applicationId: app._id,
+            candidate: {
+                id: app.candidate._id,
+                name: app.candidate.fullName,
+                email: app.candidate.email
+            },
+            resume: app.resume ? {
+                id: app.resume._id,
+                url: app.resume.fileUrl
+            } : null,
+            status: app.status,
+            appliedAt: app.createdAt
+        }))
 
     // 4. Final response
     return res.status(200).json(
         new ApiResponse(
             200,
             {
-                jobId,
                 totalApplications: formattedApplications.length,
                 applications: formattedApplications
             },

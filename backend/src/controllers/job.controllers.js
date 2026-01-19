@@ -2,6 +2,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {Job} from "../models/job.models.js";
+import { Application } from "../models/application.models.js";
 import mongoose from "mongoose";
 
 const getAllJobs = asyncHandler(async(req,res)=>{
@@ -12,6 +13,7 @@ const getAllJobs = asyncHandler(async(req,res)=>{
 
 const getJobById = asyncHandler(async(req,res) => {
     const _id = req.params.id
+    const candidate = req.user?._id
     if (!mongoose.Types.ObjectId.isValid(_id)) {
         throw new ApiError(400, "Invalid job ID");
     }
@@ -24,7 +26,15 @@ const getJobById = asyncHandler(async(req,res) => {
         throw new ApiError(404, "Job not found");
     }
 
-    return res.status(200).json(new ApiResponse(200,job,"job fetched successfully"))
+    const applicant = await Application.findOne({candidate,job : _id})
+
+    let applied = false
+    if(candidate) {
+        const applicant = await Application.findOne({candidate,job : _id})
+        if(applicant) applied = true
+    }
+
+    return res.status(200).json(new ApiResponse(200,{...job.toObject(),alreadyApplied:applied},"job fetched successfully"))
 })
 
 const getRecruiterJobs = asyncHandler(async(req,res)=> {
@@ -47,6 +57,9 @@ const createJob = asyncHandler(async(req,res)=> {
     const recruiter = req.user._id
     const {title,description,requiredSkills,jobType,location,isRemote,experienceLevel,companyName,salaryRange,expiresAt} = req.body
     const { status = "draft" } = req.body
+    
+    console.log('Creating job with data:', {title,description,requiredSkills,jobType,location,isRemote,experienceLevel,companyName,salaryRange,expiresAt});
+    
     if(!title || !description || !jobType || !location || !companyName) {
         throw new ApiError(400,"All required fields must be provided")
     }
@@ -57,21 +70,29 @@ const createJob = asyncHandler(async(req,res)=> {
         throw new ApiError(400, "Invalid job status");
     }
 
-    const job = await Job.create({
-        title,
-        description,
-        requiredSkills,
-        jobType,
-        location,
-        isRemote,
-        experienceLevel,
-        companyName,
-        salaryRange,
-        expiresAt,
-        recruiter,
-        status
-    })
-    return res.status(201).json(new ApiResponse(201,job,"Job created successfully"))
+    try {
+        const job = await Job.create({
+            title,
+            description,
+            requiredSkills,
+            jobType,
+            location,
+            isRemote,
+            experienceLevel,
+            companyName,
+            salaryRange,
+            expiresAt,
+            recruiter,
+            status
+        })
+        return res.status(201).json(new ApiResponse(201,job,"Job created successfully"))
+    } catch (error) {
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(err => err.message);
+            throw new ApiError(400, messages.join(', '));
+        }
+        throw error;
+    }
 })
 
 const updateJob = asyncHandler(async(req,res)=> {
@@ -155,13 +176,24 @@ const updateJob = asyncHandler(async(req,res)=> {
 const deleteJob = asyncHandler(async(req,res) => {
     const _id = req.params.id
     const recruiter = req.user._id
+    console.log('Delete job called with ID:', _id, 'Recruiter:', recruiter);
+    
     if(!mongoose.Types.ObjectId.isValid(_id)){
+        console.log('Invalid job ID:', _id);
         throw new ApiError(400, "job not exist")
     }
-    const deletedJob = await Job.findByIdAndDelete({_id,recruiter})
-    if(!deletedJob){
+    
+    const job = await Job.findOne({_id, recruiter})
+    console.log('Found job for deletion:', job);
+    
+    if(!job){
+        console.log('Job not found or no permission');
         throw new ApiError(400,"Job not found or you dont have permission to delete it")
     }
+    
+    const deletedJob = await Job.findByIdAndDelete(_id)
+    console.log('Deleted job:', deletedJob);
+    
     return res.status(200)
     .json(new ApiResponse(
         200,

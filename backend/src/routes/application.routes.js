@@ -8,9 +8,12 @@ import { requireResume } from "../middlewares/requireResume.middlewares.js";
 
 const router = Router()
 
-router.route("/:id").post(verifyJWT,requireCandidate,requireResume,applyForJob)
-router.route("/job/:id").get(verifyJWT,requireRecruiter,applicantsByJobId)
-router.route("/:id/status").patch(verifyJWT,requireRecruiter,statusUpdate)
+// Specific routes BEFORE generic :id routes
 router.route("/me").get(verifyJWT,requireCandidate,applicationByCandidateId)
+router.route("/job/:id").get(verifyJWT,requireRecruiter,applicantsByJobId)
+
+// Generic :id routes AFTER specific routes
+router.route("/:id").post(verifyJWT,requireCandidate,requireResume,applyForJob)
+router.route("/:id/status").patch(verifyJWT,requireRecruiter,statusUpdate)
 
 export default router

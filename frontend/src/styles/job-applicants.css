@@ -1,0 +1,113 @@
+.job-applicants-container {
+  padding: 2rem 0;
+}
+
+.job-applicants-container h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #2c3e50;
+  font-size: 2rem;
+}
+
+.applicants-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.applicant-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  border-left: 4px solid #3498db;
+}
+
+.applicant-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.applicant-header h3 {
+  margin: 0 0 0.25rem 0;
+  color: #2c3e50;
+}
+
+.applicant-header .email {
+  margin: 0;
+  color: #7f8c8d;
+  font-size: 0.9rem;
+}
+
+.status-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-applied {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.status-shortlisted {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-rejected {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.status-selected {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.applicant-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.status-select {
+  padding: 0.5rem;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.text-center {
+  text-align: center;
+  color: #7f8c8d;
+}
+
+@media (max-width: 768px) {
+  .applicant-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .applicant-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .applicant-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .applicant-actions .btn {
+    width: 100%;
+  }
+
+  .status-select {
+    width: 100%;
+  }
+}
