@@ -21,6 +21,10 @@ const applicationSchema = new mongoose.Schema({
         ref : "Resume",
         required : true
     },
+    resumeSnapshot: {
+        fileUrl: String,
+        fileName: String
+    },
     status : {
         type : String,
         enum : ["applied","shortlisted","rejected","hired"],

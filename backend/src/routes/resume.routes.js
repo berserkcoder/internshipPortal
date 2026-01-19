@@ -13,7 +13,7 @@ const router = Router()
 
 router.route("/uploadResume").post(verifyJWT,requireCandidate,upload.single("resume"),uploadResume)
 router.route("/me").get(verifyJWT,requireCandidate,getResume)
-router.route("/:id").patch(verifyJWT,requireCandidate,upload.single("updatedResume"),requireResume,updateResume)
+router.route("/:id").patch(verifyJWT,requireCandidate,requireResume,upload.single("updatedResume"),updateResume)
 router.route("/:id").delete(verifyJWT,requireCandidate,requireResume,deleteResume)
 
 export default router
