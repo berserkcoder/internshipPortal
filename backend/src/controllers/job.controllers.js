@@ -190,14 +190,17 @@ const deleteJob = asyncHandler(async(req,res) => {
         console.log('Job not found or no permission');
         throw new ApiError(400,"Job not found or you dont have permission to delete it")
     }
+
+    job.status = "closed"
+    await job.save()
     
-    const deletedJob = await Job.findByIdAndDelete(_id)
-    console.log('Deleted job:', deletedJob);
+    // const deletedJob = await Job.findByIdAndDelete(_id)
+    // console.log('Deleted job:', deletedJob);
     
     return res.status(200)
     .json(new ApiResponse(
         200,
-        deletedJob,
+        {},
         "Job deleted successfully"
     ))
 }) 

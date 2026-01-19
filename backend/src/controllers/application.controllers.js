@@ -145,7 +145,7 @@ const statusUpdate = asyncHandler(async(req,res)=>{
 const applicationByCandidateId = asyncHandler(async(req,res)=>{
     const candidate = req.user._id
     const applications = await Application.find({candidate})
-                        .populate("job", "title companyName")
+                        .populate("job", "title companyName status")
                         .sort({createdAt : -1})
 
     const formattedApplications = applications.map(app => ({
@@ -153,7 +153,8 @@ const applicationByCandidateId = asyncHandler(async(req,res)=>{
         job : {
             id : app.job._id,
             title : app.job.title,
-            companyName : app.job.companyName
+            companyName : app.job.companyName,
+            status : app.job.status
         },
         status: app.status,
         appliedAt: app.createdAt

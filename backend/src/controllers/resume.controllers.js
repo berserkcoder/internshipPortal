@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import {ApiResponse} from "../utils/ApiResponse.js"
 import { Resume } from "../models/resume.models.js";
 import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
+import { Application } from "../models/application.models.js";
 
 const uploadResume = asyncHandler(async(req,res)=>{
     /*
@@ -51,7 +52,7 @@ const uploadResume = asyncHandler(async(req,res)=>{
 
 const getResume = asyncHandler(async(req,res)=>{
     const candidate = req.user._id
-    const resume = await Resume.findOne({candidate})
+    const resume = await Resume.findOne({candidate,status:"active"})
     if(!resume){
         throw new ApiError(404,"Resume not found please upload your resume first")
     }
@@ -110,14 +111,18 @@ const deleteResume = asyncHandler(async(req,res)=>{
         console.log('Resume not found');
         throw new ApiError(404,"Resume not found")
     }
-    
-    console.log('Deleting from cloudinary:', resume.cloudinaryPublicId);
-    await deleteFromCloudinary(resume.cloudinaryPublicId)
-    
-    const deletedResume = await Resume.findOneAndDelete({_id : resumeId,candidate})
-    console.log('Deleted resume:', deletedResume);
-    
-    return res.status(200).json(new ApiResponse(200,deletedResume,"resume deleted successfully"))
+
+    // const anyApplications = await Application.findOne({resume : resumeId})
+
+    // if(!anyApplications) {
+    //     await deleteFromCloudinary(resume.cloudinaryPublicId)
+    //     await Resume.findOneAndDelete({_id : resumeId,candidate})
+    // }else {
+        resume.status = "inactive"
+        await resume.save()
+    // }
+
+    return res.status(200).json(new ApiResponse(200,{},"resume removed successfully from profile"))
 })
 
 

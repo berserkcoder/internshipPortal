@@ -26,6 +26,11 @@ const resumeSchema = new mongoose.Schema({
     mimeType : {
         type : String,
         required : true
+    },
+    status : {
+        type : String,
+        enum : ["active","inactive"],
+        default : "active"
     }
 },{timestamps:true})
 

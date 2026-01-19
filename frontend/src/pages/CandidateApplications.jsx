@@ -105,6 +105,9 @@ export const CandidateApplications = () => {
                   <div>
                     <h3>{app.job?.title || 'Job Posting'}</h3>
                     <p className="company-name">{app.job?.companyName || 'Company'}</p>
+                    <div className="job-status-info">
+                      <p><strong>Job Status:</strong> {app.job?.status.charAt(0).toUpperCase() + app.job?.status.slice(1) || "active"}</p>
+                    </div>
                   </div>
                   <span 
                     className={`status-badge ${getStatusBadge(app.status)}`}
