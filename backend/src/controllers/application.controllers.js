@@ -1,7 +1,7 @@
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import {ApiResponse} from "../utils/ApiResponse.js"
-import {Application} from "../models/application.models.js";
+import { ApiResponse } from "../utils/ApiResponse.js"
+import { Application } from "../models/application.models.js";
 import mongoose from "mongoose";
 import { Resume } from "../models/resume.models.js";
 import { Job } from "../models/job.models.js";
@@ -84,7 +84,7 @@ const applicantsByJobId = asyncHandler(async (req, res) => {
 
     // 3. Shape clean recruiter-safe response
     const formattedApplications = applications
-        .filter(app => app.candidate) // Filter out applications with deleted candidate/resume
+        .filter(app => app.candidate && app.resume) // Filter out applications with deleted candidate/resume
         .map(app => ({
             applicationId: app._id,
             candidate: {
@@ -92,10 +92,10 @@ const applicantsByJobId = asyncHandler(async (req, res) => {
                 name: app.candidate.fullName,
                 email: app.candidate.email
             },
-            resume: app.resume ? {
+            resume: {
                 id: app.resume._id,
                 url: app.resume.fileUrl
-            } : null,
+            },
             status: app.status,
             appliedAt: app.createdAt
         }))
@@ -113,10 +113,10 @@ const applicantsByJobId = asyncHandler(async (req, res) => {
     )
 })
 
-const statusUpdate = asyncHandler(async(req,res)=>{
+const statusUpdate = asyncHandler(async (req, res) => {
     const applicationId = req.params.id
     const recruiterId = req.user._id
-    const {status} = req.body
+    const { status } = req.body
 
     // 1. Verify job ownership
     const application = await Application.findOne({ _id: applicationId, recruiter: recruiterId })
@@ -127,8 +127,8 @@ const statusUpdate = asyncHandler(async(req,res)=>{
         )
     }
 
-    if(!status){
-        throw new ApiError(400,"Status should be updated")
+    if (!status) {
+        throw new ApiError(400, "Status should be updated")
     }
 
     const updatedApplication = await Application.findByIdAndUpdate(
@@ -136,38 +136,47 @@ const statusUpdate = asyncHandler(async(req,res)=>{
         { status },
         { new: true, runValidators: true }
     )
-    if(!updatedApplication){
-        throw new ApiError(500,"Internal server error while updating application status")
+    if (!updatedApplication) {
+        throw new ApiError(500, "Internal server error while updating application status")
     }
-    return res.status(200).json(new ApiResponse(200,updatedApplication,"application status updated successfully"))
+    return res.status(200).json(new ApiResponse(200, updatedApplication, "application status updated successfully"))
 })
 
-const applicationByCandidateId = asyncHandler(async(req,res)=>{
+const applicationByCandidateId = asyncHandler(async (req, res) => {
     const candidate = req.user._id
-    const applications = await Application.find({candidate})
-                        .populate("job", "title companyName status")
-                        .sort({createdAt : -1})
+    const applications = await Application.find({ candidate })
+        .populate("job", "title companyName status")
+        .sort({ createdAt: -1 })
 
-    const formattedApplications = applications.map(app => ({
+    /* 
+    Filter out applications where the associated job might be null.
+    This protects against crashes if:
+    1. A job was hard-deleted (manually or by previous code versions)
+    2. Data inconsistency exists
+    Even with soft-delete, it's good practice to handle missing references.
+    */
+    const validApplications = applications.filter(app => app.job != null);
+
+    const formattedApplications = validApplications.map(app => ({
         applicationId: app._id,
-        job : {
-            id : app.job._id,
-            title : app.job.title,
-            companyName : app.job.companyName,
-            status : app.job.status
+        job: {
+            id: app.job._id,
+            title: app.job.title,
+            companyName: app.job.companyName,
+            status: app.job.status
         },
         status: app.status,
         appliedAt: app.createdAt
     }))
     return res.status(200)
-              .json(new ApiResponse(
-                200,
-                {
-                    totalApplications : formattedApplications.length,
-                    applications : formattedApplications
-                },
-                "All applications of this candidate fetched successfully"
+        .json(new ApiResponse(
+            200,
+            {
+                totalApplications: formattedApplications.length,
+                applications: formattedApplications
+            },
+            "All applications of this candidate fetched successfully"
         ))
 })
 
-export {applyForJob,applicantsByJobId,statusUpdate,applicationByCandidateId}
+export { applyForJob, applicantsByJobId, statusUpdate, applicationByCandidateId }

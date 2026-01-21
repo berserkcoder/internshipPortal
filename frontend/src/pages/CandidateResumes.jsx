@@ -7,24 +7,25 @@ import { FileText, Upload, Trash2, Download } from 'lucide-react';
 import '../styles/resumes.css';
 
 export const CandidateResumes = () => {
-  const [resume, setResume] = useState(null);
+  const [resumes, setResumes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    fetchResume();
+    fetchResumes();
   }, []);
 
-  const fetchResume = async () => {
+  const fetchResumes = async () => {
     try {
       setLoading(true);
       const response = await resumeService.getCandidateResumes();
-      setResume(response);
+      // Ensure we always work with an array
+      setResumes(Array.isArray(response) ? response : []);
     } catch (err) {
-      console.log('No resume uploaded yet');
-      setResume(null);
+      console.log('Error fetching resumes:', err);
+      setResumes([]);
     } finally {
       setLoading(false);
     }
@@ -52,7 +53,7 @@ export const CandidateResumes = () => {
     try {
       await resumeService.uploadResume(file);
       setSuccess('Resume uploaded successfully!');
-      fetchResume();
+      fetchResumes();
       // Reset input
       e.target.value = '';
     } catch (err) {
@@ -62,20 +63,20 @@ export const CandidateResumes = () => {
     }
   };
 
-  const handleDelete = async () => {
-    if (!resume || !window.confirm('Are you sure you want to delete this resume?')) return;
+  const handleDelete = async (resumeId) => {
+    if (!window.confirm('Are you sure you want to delete this resume?')) return;
 
     try {
-      console.log('Delete handler called with resume ID:', resume._id);
-      const result = await resumeService.deleteResume(resume._id);
-      console.log('Delete response:', result);
+      await resumeService.deleteResume(resumeId);
       setSuccess('Resume deleted successfully');
-      setResume(null);
+
+      // Update local state to remove the deleted resume immediately
+      setResumes(prevResumes => prevResumes.filter(r => r._id !== resumeId));
+
       setTimeout(() => setSuccess(''), 2000);
     } catch (err) {
-      console.error('Delete error full:', err);
-      console.error('Delete error response:', err.response);
-      setError(err.response?.data?.message || err.message || 'Failed to delete resume');
+      console.error('Delete error:', err);
+      setError(err.response?.data?.message || 'Failed to delete resume');
     }
   };
 
@@ -92,10 +93,12 @@ export const CandidateResumes = () => {
         <Card className="upload-section">
           <div className="upload-box">
             <Upload size={32} />
-            <h3>Upload Your Resume</h3>
+            <h3>Upload New Resume</h3>
             <p>PDF or Word document (Max 5MB)</p>
             <label htmlFor="resume-input" className="btn btn-primary">
-              {resume ? 'Update Resume' : 'Upload Resume'}
+              <span className="flex items-center gap-2">
+                <Upload size={16} /> Upload Resume
+              </span>
             </label>
             <input
               id="resume-input"
@@ -105,40 +108,43 @@ export const CandidateResumes = () => {
               disabled={uploading}
               style={{ display: 'none' }}
             />
-            {uploading && <p style={{marginTop: '10px', fontSize: '12px'}}>Uploading...</p>}
+            {uploading && <p style={{ marginTop: '10px', fontSize: '12px' }}>Uploading...</p>}
           </div>
         </Card>
 
-        {resume ? (
+        {resumes.length > 0 ? (
           <div className="resumes-list">
-            <Card className="resume-item">
-              <div className="resume-header">
-                <div className="resume-info">
-                  <FileText size={32} />
-                  <div>
-                    <h3>{resume.fileName}</h3>
-                    <p>{(resume.fileSize / 1024).toFixed(2)} KB</p>
-                    <p style={{fontSize: '12px', color: '#666'}}>Uploaded on {new Date(resume.createdAt).toLocaleDateString()}</p>
+            <h2 className="section-title">Uploaded Resumes ({resumes.length})</h2>
+            {resumes.map((resume) => (
+              <Card key={resume._id} className="resume-item">
+                <div className="resume-header">
+                  <div className="resume-info">
+                    <FileText size={32} />
+                    <div>
+                      <h3>{resume.fileName}</h3>
+                      <p>{(resume.fileSize / 1024).toFixed(2)} KB</p>
+                      <p style={{ fontSize: '12px', color: '#666' }}>Uploaded on {new Date(resume.createdAt).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <div className="resume-actions">
+                    <a href={resume.fileUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
+                      <Download size={16} /> Download
+                    </a>
+                    <Button
+                      onClick={() => handleDelete(resume._id)}
+                      size="small"
+                      style={{ backgroundColor: '#dc3545', color: 'white' }}
+                    >
+                      <Trash2 size={16} /> Delete
+                    </Button>
                   </div>
                 </div>
-                <div className="resume-actions">
-                  <a href={resume.fileUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
-                    <Download size={16} /> Download
-                  </a>
-                  <Button 
-                    onClick={handleDelete}
-                    size="small"
-                    style={{backgroundColor: '#dc3545'}}
-                  >
-                    <Trash2 size={16} /> Delete
-                  </Button>
-                </div>
-              </div>
-            </Card>
+              </Card>
+            ))}
 
             <div className="resume-usage">
-              <h3>Using This Resume</h3>
-              <p>This resume will be used when you apply for jobs. You can update it anytime.</p>
+              <h3>Using These Resumes</h3>
+              <p>These resumes will be available when you apply for jobs.</p>
             </div>
           </div>
         ) : (
@@ -146,17 +152,6 @@ export const CandidateResumes = () => {
             <FileText size={48} />
             <h2>No Resume Uploaded</h2>
             <p>Upload your resume to start applying for internships!</p>
-            <label htmlFor="resume-input2" className="btn btn-primary">
-              Upload Resume Now
-            </label>
-            <input
-              id="resume-input2"
-              type="file"
-              accept=".pdf,.doc,.docx"
-              onChange={handleFileUpload}
-              disabled={uploading}
-              style={{ display: 'none' }}
-            />
           </div>
         )}
       </div>

@@ -4,8 +4,7 @@ const resumeSchema = new mongoose.Schema({
     candidate : {
         type : mongoose.Schema.Types.ObjectId,
         ref : "User",
-        required : true,
-        unique : true
+        required : true
     },
     cloudinaryPublicId : {
         type: String,
