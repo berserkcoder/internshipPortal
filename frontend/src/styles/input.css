@@ -1,37 +1,61 @@
 .input-group {
   margin-bottom: 1.5rem;
+  position: relative;
 }
 
 .input-label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-main);
+  font-size: 0.95rem;
+  transition: color var(--transition-fast);
 }
 
 .input {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #bdc3c7;
-  border-radius: 4px;
+  padding: 0.85rem 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-md);
   font-size: 1rem;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  transition: all var(--transition-normal);
+  background-color: rgba(255, 255, 255, 0.9);
+  color: var(--text-main);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
 }
 
 .input:focus {
   outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+  background-color: white;
+}
+
+.input:focus + .input-label,
+.input-group:focus-within .input-label {
+  color: var(--primary-color);
 }
 
 .input.error {
-  border-color: #e74c3c;
-  background-color: rgba(231, 76, 60, 0.05);
+  border-color: var(--danger);
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.input.error:focus {
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
 }
 
 .input-error {
   display: block;
-  margin-top: 0.25rem;
-  color: #e74c3c;
-  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  color: var(--danger);
+  font-size: 0.85rem;
+  font-weight: 500;
+  animation: slideInRight 0.3s ease;
 }
+
+/* Animations included in index.css but handled locally below if needed */

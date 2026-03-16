@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { jobService } from '../services/jobService';
-import { Briefcase, Users, UserCheck, MapPin } from 'lucide-react';
+import { Briefcase, Users, UserCheck, MapPin, Building, Search, DollarSign, Clock, PlusCircle, Activity } from 'lucide-react';
 import '../styles/home.css';
 
 export const Home = () => {
@@ -10,16 +10,25 @@ export const Home = () => {
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState([]);
   const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     loadJobs();
-  }, []);
+  }, [user]);
 
   const loadJobs = async () => {
     try {
       setLoading(true);
       setError('');
-      const jobsData = await jobService.getAllJobs({});
+      let jobsData = [];
+      
+      // If recruiter, get their own jobs for the dashboard feed
+      if (user && user.role === 'recruiter') {
+         jobsData = await jobService.getRecruiterJobs();
+      } else {
+         jobsData = await jobService.getAllJobs({});
+      }
+      
       setJobs(Array.isArray(jobsData) ? jobsData : []);
     } catch (err) {
       console.error('Error loading jobs:', err);
@@ -30,172 +39,272 @@ export const Home = () => {
     }
   };
 
-  return (
-    <div className="home-container">
-      {/* Loading Animation */}
-      {loading && (
-        <section className="hero" style={{minHeight: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column'}}>
-          <style>{`
-            @keyframes spin {
-              to { transform: rotate(360deg); }
-            }
-          `}</style>
-          <div style={{
-            width: '80px',
-            height: '80px',
-            border: '4px solid rgba(255,255,255,0.3)',
-            borderTop: '4px solid white',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            marginBottom: '30px'
-          }}></div>
-          <h2 style={{color: 'white', fontSize: '28px', fontWeight: '500'}}>Loading opportunities...</h2>
-        </section>
-      )}
+  const handleSearch = (e) => {
+    e.preventDefault();
+  };
 
-      {/* Jobs Section - visible for all users */}
-      {!loading && (
-        <>
-          <section style={{padding: '4rem 2rem', backgroundColor: '#f8f9fa', textAlign: 'center', borderBottom: '1px solid #e9ecef'}}>
-            <div className="container">
-              <h1 style={{fontSize: '32px', marginBottom: '10px', color: '#333'}}>Available Opportunities</h1>
-              <p style={{color: '#666', fontSize: '16px', marginBottom: '10px'}}>Explore {jobs.length} exciting internship positions</p>
-              {!user && (
-                <p style={{color: '#666', fontSize: '14px', marginTop: '15px'}}>
-                  <Link to="/login" style={{color: '#3498db', textDecoration: 'none', fontWeight: '600'}}>Login</Link>
-                  {' / '}
-                  <Link to="/signup" style={{color: '#3498db', textDecoration: 'none', fontWeight: '600'}}>SignUp</Link> to apply for jobs
-                </p>
-              )}
+  const renderRecruiterView = () => (
+    <div className="home-container animate-fade-in">
+      {/* Recruiter Hero Section */}
+      <section className="hero recruiter-hero">
+        <div className="hero-content">
+          <h1>Discover Top Talent. Build Your Team.</h1>
+          <p>Manage your internship postings and review applications seamlessly on InternHub.</p>
+          <div className="flex-center mt-3">
+             <Link to="/recruiter/post-job" className="btn btn-primary" style={{
+                background: 'white', color: 'var(--primary-color)', padding: '0.85rem 2.5rem', borderRadius: '30px', fontWeight: 'bold', fontSize: '1.2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+              }}>
+                <PlusCircle size={20} style={{marginRight: '8px', verticalAlign: 'text-bottom'}} /> 
+                Post a New Job
+             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Recruiter Dashboard Layout */}
+      <div className="container layout-two-column mb-5">
+        {/* Left Sidebar Menu */}
+        <aside className="sidebar">
+           <div className="glass-card p-3 mb-3 user-summary-card">
+               <div className="user-avatar" style={{ background: 'linear-gradient(135deg, #10b981, #059669)'}}>
+                  {user.fullName.charAt(0).toUpperCase()}
+               </div>
+               <h3>{user.fullName}</h3>
+               <p className="user-role-badge" style={{color: '#059669', backgroundColor: 'rgba(16, 185, 129, 0.1)'}}>{user.role}</p>
+               <div className="user-quick-links mt-3" style={{textAlign: 'left'}}>
+                 <Link to="/recruiter/jobs"><Briefcase size={16} /> My Postings</Link>
+                 <Link to="/recruiter/post-job"><PlusCircle size={16} /> Post New Job</Link>
+               </div>
+           </div>
+           <div className="glass-card p-3">
+             <h4 style={{color: 'var(--text-muted)', marginBottom: '1rem', fontSize: '0.9rem'}}>Need Help?</h4>
+             <p style={{fontSize: '0.9rem', color: 'var(--text-main)', marginBottom: '1rem'}}>Check our employer guides to optimize your job posts.</p>
+             <button className="btn btn-secondary btn-full" style={{padding: '0.5rem'}}>View Guides</button>
+           </div>
+        </aside>
+
+        {/* Recruiter Main Feed */}
+        <main className="main-feed">
+           {/* Quick Stats */}
+           <div className="recruiter-stats-grid mb-4">
+              <div className="glass-card stat-card">
+                 <div className="stat-icon" style={{color: '#3b82f6', background: 'rgba(59, 130, 246, 0.1)'}}>
+                    <Briefcase size={24} />
+                 </div>
+                 <div className="stat-info">
+                    <p>Active Postings</p>
+                    <h3>{jobs.length}</h3>
+                 </div>
+              </div>
+              <div className="glass-card stat-card">
+                 <div className="stat-icon" style={{color: '#10b981', background: 'rgba(16, 185, 129, 0.1)'}}>
+                    <Users size={24} />
+                 </div>
+                 <div className="stat-info">
+                    <p>Total Applicants</p>
+                    <h3>--</h3>
+                 </div>
+              </div>
+              <div className="glass-card stat-card">
+                 <div className="stat-icon" style={{color: '#8b5cf6', background: 'rgba(139, 92, 246, 0.1)'}}>
+                    <Activity size={24} />
+                 </div>
+                 <div className="stat-info">
+                    <p>Profile Views</p>
+                    <h3>--</h3>
+                 </div>
+              </div>
+           </div>
+
+           <div className="feed-header flex-between mb-3">
+             <h2 className="section-title" style={{fontSize: '1.5rem', margin: 0}}>Your Recent Postings</h2>
+             <Link to="/recruiter/jobs" style={{color: 'var(--primary-color)', fontWeight: '600'}}>View All &rarr;</Link>
+           </div>
+
+           {loading ? (
+            <div className="flex-center" style={{ minHeight: '200px' }}>
+              <div className="loader-spinner"></div>
             </div>
-          </section>
+           ) : jobs.length === 0 ? (
+            <div className="glass-card flex-center flex-column p-5 text-center text-muted">
+              <Search size={48} style={{ marginBottom: '15px', color: 'var(--border-color)' }} />
+              <p style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>You haven't posted any jobs yet.</p>
+              <Link to="/recruiter/post-job" className="btn btn-primary">Create Your First Post</Link>
+            </div>
+           ) : (
+            <div className="jobs-list">
+              {jobs.slice(0, 5).map((job) => (
+                <div key={job._id} className="job-list-card animate-fade-in" style={{borderLeft: '4px solid #10b981'}}>
+                  <div className="job-logo-placeholder">
+                    {job.companyName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="job-main-info">
+                    <Link to={`/recruiter/job-applicants/${job._id}`} className="job-title-link">
+                      <h3 className="job-title">{job.title}</h3>
+                    </Link>
+                    <div className="job-meta-row mt-1">
+                      <span className="meta-item"><MapPin size={14} /> {job.location}</span>
+                      <span className="meta-item"><Clock size={14} /> {job.jobType}</span>
+                    </div>
+                  </div>
+                  <div className="job-actions">
+                     <Link to={`/recruiter/job-applicants/${job._id}`} className="btn btn-secondary apply-btn" style={{background: 'rgba(16, 185, 129, 0.1)', color: '#059669', borderColor: 'transparent'}}>
+                        Manage
+                     </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+           )}
+        </main>
+      </div>
+    </div>
+  );
 
-          {error ? (
-            <div className="container" style={{textAlign: 'center', padding: '3rem 2rem', color: '#e74c3c'}}>
+  const renderCandidateView = () => (
+    <div className="home-container animate-fade-in">
+      {/* Search Hero Section */}
+      <section className="hero">
+        <div className="hero-content">
+          <h1>Find Your Next Opportunity</h1>
+          <p>Discover top-tier internships and build your professional network.</p>
+          
+          <form className="hero-search-form" onSubmit={handleSearch}>
+            <div className="search-input-wrapper">
+              <Search className="search-icon" size={20} />
+              <input 
+                type="text" 
+                placeholder="Job title, keywords, or company" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+            </div>
+            <div className="search-input-wrapper">
+              <MapPin className="search-icon" size={20} />
+              <input 
+                type="text" 
+                placeholder="City, state, or 'Remote'" 
+                className="search-input"
+              />
+            </div>
+            <button type="submit" className="btn btn-primary search-btn">
+              Search Jobs
+            </button>
+          </form>
+
+          {!user && (
+            <div className="flex-center mt-3" style={{ gap: '1rem', marginTop: '2rem' }}>
+              <span style={{opacity: 0.8}}>New to InternHub?</span>
+              <Link to="/signup" style={{color: 'white', fontWeight: 'bold', textDecoration: 'underline'}}>Create an Account</Link>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Main Layout (Two Column) */}
+      <div className="container layout-two-column mb-5">
+        
+        {/* Sidebar Filters */}
+        <aside className="sidebar">
+          {user && (
+             <div className="glass-card p-3 mb-3 user-summary-card">
+               <div className="user-avatar">
+                  {user.fullName.charAt(0).toUpperCase()}
+               </div>
+               <h3>{user.fullName}</h3>
+               <p className="user-role-badge">{user.role}</p>
+               <div className="user-quick-links mt-3" style={{textAlign: 'left'}}>
+                 <Link to="/candidate/applications"><Briefcase size={16} /> My Applications</Link>
+                 <Link to="/candidate/resumes"><Users size={16} /> My Resumes</Link>
+               </div>
+             </div>
+          )}
+
+          <div className="glass-card filter-card p-3">
+            <h3 className="filter-title">Filters</h3>
+            
+            <div className="filter-group">
+              <h4>Job Type</h4>
+              <label className="checkbox-label"><input type="checkbox" /> Full-time</label>
+              <label className="checkbox-label"><input type="checkbox" /> Part-time</label>
+              <label className="checkbox-label"><input type="checkbox" /> Internship</label>
+            </div>
+
+            <div className="filter-group">
+              <h4>Work Setup</h4>
+              <label className="checkbox-label"><input type="checkbox" /> On-site</label>
+              <label className="checkbox-label"><input type="checkbox" /> Remote</label>
+              <label className="checkbox-label"><input type="checkbox" /> Hybrid</label>
+            </div>
+            
+            <button className="btn btn-secondary btn-full mt-2" style={{padding: '0.5rem'}}>Clear Filters</button>
+          </div>
+        </aside>
+
+        {/* Main Feed */}
+        <main className="main-feed">
+          <div className="feed-header flex-between mb-3">
+            <h2 className="section-title" style={{fontSize: '1.5rem', margin: 0}}>Recommended Jobs</h2>
+            <span style={{color: 'var(--text-muted)'}}>{jobs.length} results</span>
+          </div>
+
+          {loading ? (
+            <div className="flex-center" style={{ minHeight: '200px', flexDirection: 'column' }}>
+              <div className="loader-spinner"></div>
+            </div>
+          ) : error ? (
+            <div className="glass-card p-4 text-center" style={{ color: 'var(--danger)' }}>
               <p>{error}</p>
             </div>
           ) : jobs.length === 0 ? (
-            <div className="container" style={{textAlign: 'center', padding: '4rem 2rem', color: '#666'}}>
-              <Briefcase size={48} style={{marginBottom: '15px', opacity: 0.5}} />
-              <p style={{fontSize: '16px'}}>No jobs available at the moment</p>
+            <div className="glass-card flex-center flex-column p-5 text-center text-muted">
+              <Search size={48} style={{ marginBottom: '15px', color: 'var(--border-color)' }} />
+              <p style={{ fontSize: '1.1rem' }}>No jobs match your search.</p>
             </div>
           ) : (
-            <section style={{padding: '1rem 2rem'}}>
-              <div className="container">
-                <div className="jobs-grid">
-                  {jobs.map((job) => (
-                    <Link 
-                      to={user ? `/jobs/${job._id}` : '/login'} 
-                      key={job._id} 
-                      style={{textDecoration: 'none'}}
-                    >
-                      <div className="card" style={{height: '100%', cursor: 'pointer', transition: 'all 0.3s'}}>
-                        <div style={{marginBottom: '15px'}}>
-                          <h3 style={{fontSize: '18px', marginBottom: '5px', color: '#333'}}>{job.title}</h3>
-                          <p style={{fontSize: '14px', color: '#666', fontWeight: '500'}}>{job.companyName}</p>
-                        </div>
-                        
-                        <div style={{display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '15px', color: '#666', fontSize: '13px'}}>
-                          <MapPin size={14} />
-                          <span>{job.location} {job.isRemote && '(Remote)'}</span>
-                        </div>
-
-                        <p style={{fontSize: '13px', color: '#555', marginBottom: '15px', lineHeight: '1.4'}}>
-                          {job.description.substring(0, 100)}...
-                        </p>
-
-                        <div style={{display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '15px'}}>
-                          <span style={{
-                            backgroundColor: '#e3f2fd',
-                            color: '#1976d2',
-                            padding: '4px 10px',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            fontWeight: '500',
-                            textTransform: 'capitalize'
-                          }}>
-                            {job.jobType}
-                          </span>
-                          {job.salaryRange && (
-                            <span style={{
-                              backgroundColor: '#f3e5f5',
-                              color: '#7b1fa2',
-                              padding: '4px 10px',
-                              borderRadius: '4px',
-                              fontSize: '12px',
-                              fontWeight: '500'
-                            }}>
-                              {job.salaryRange}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+            <div className="jobs-list">
+              {jobs.map((job) => (
+                <div key={job._id} className="job-list-card animate-fade-in">
+                  <div className="job-logo-placeholder">
+                     {job.companyName ? job.companyName.charAt(0).toUpperCase() : 'C'}
+                  </div>
+                  
+                  <div className="job-main-info">
+                    <Link to={user ? `/jobs/${job._id}` : '/login'} className="job-title-link">
+                      <h3 className="job-title">{job.title}</h3>
                     </Link>
-                  ))}
-                </div>
-              </div>
-            </section>
-          )}
-        </>
-      )}
+                    <div className="job-company-name">
+                      {job.companyName}
+                    </div>
+                    
+                    <div className="job-meta-row mt-1">
+                      <span className="meta-item"><MapPin size={14} /> {job.location} {job.isRemote && '(Remote)'}</span>
+                      {job.salaryRange && <span className="meta-item"><DollarSign size={14} /> {job.salaryRange}</span>}
+                      <span className="meta-item"><Clock size={14} /> {job.jobType}</span>
+                    </div>
 
-      {/* User Dashboard - only for logged-in users */}
-      {user && !loading && (
-        <section className="dashboard-guide" style={{backgroundColor: '#fff', borderTop: '1px solid #e9ecef', padding: '4rem 2rem'}}>
-          <div className="container">
-            <h2 style={{marginBottom: '2rem', textAlign: 'center'}}>Your Dashboard</h2>
-            <div className="guide-cards">
-              {user.role === 'candidate' && (
-                <>
-                  <Link to="/jobs" className="guide-card">
-                    <Briefcase size={32} />
-                    <h3>Browse Jobs</h3>
-                    <p>Explore all available internship positions</p>
-                  </Link>
-                  <Link to="/candidate/applications" className="guide-card">
-                    <UserCheck size={32} />
-                    <h3>My Applications</h3>
-                    <p>Track your job applications</p>
-                  </Link>
-                  <Link to="/candidate/resumes" className="guide-card">
-                    <Users size={32} />
-                    <h3>My Resumes</h3>
-                    <p>Manage your resume uploads</p>
-                  </Link>
-                </>
-              )}
-              {user.role === 'recruiter' && (
-                <>
-                  <Link to="/recruiter/jobs" className="guide-card">
-                    <Briefcase size={32} />
-                    <h3>My Jobs</h3>
-                    <p>Manage job postings</p>
-                  </Link>
-                  <Link to="/recruiter/post-job" className="guide-card">
-                    <UserCheck size={32} />
-                    <h3>Post Job</h3>
-                    <p>Create a new job posting</p>
-                  </Link>
-                </>
-              )}
-              {user.role === 'admin' && (
-                <>
-                  <Link to="/admin/users" className="guide-card">
-                    <Users size={32} />
-                    <h3>Manage Users</h3>
-                    <p>Review and approve users</p>
-                  </Link>
-                  <Link to="/admin/jobs" className="guide-card">
-                    <Briefcase size={32} />
-                    <h3>View Jobs</h3>
-                    <p>Monitor all job postings</p>
-                  </Link>
-                </>
-              )}
+                    <p className="job-desc-snippet mt-2">
+                       {job.description && job.description.length > 150 
+                          ? job.description.substring(0, 150) + '...' 
+                          : job.description}
+                    </p>
+                  </div>
+
+                  <div className="job-actions">
+                     <Link to={user ? `/jobs/${job._id}` : '/login'} className="btn btn-primary apply-btn">
+                        View Job
+                     </Link>
+                     <span className="posted-time">Posted recently</span>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        </section>
-      )}
+          )}
+        </main>
+      </div>
     </div>
   );
+
+  return user && user.role === 'recruiter' ? renderRecruiterView() : renderCandidateView();
 };
